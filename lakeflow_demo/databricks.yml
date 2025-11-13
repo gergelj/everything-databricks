@@ -5,13 +5,22 @@ bundle:
   uuid: a1e7553a-dca8-4f8e-8167-311409dee811
 
 artifacts:
-  python_artifact:
+  hello_wheel:
     type: whl
-    build: uv build --wheel
+    build: python3 setup.py bdist_wheel
 
 include:
   - resources/*.yml
   - resources/*/*.yml
+
+variables:
+  your-service-principal:
+    default: SP
+    type: string
+    description: service principal ID
+  wheel-package-path:
+    type: string
+    description: Path to the Python wheel package
 
 targets:
   dev:
@@ -23,13 +32,30 @@ targets:
     default: true
     workspace:
       host: https://adb-4501945468888683.3.azuredatabricks.net
+    variables:
+      wheel-package-path:
+        default: ../dist
 
   prod:
     mode: production
+    git:
+      branch: main # deployment should be done from this branch
+    
     workspace:
       host: https://adb-4501945468888683.3.azuredatabricks.net
       # We explicitly deploy to /Workspace/Users/gergelj.kis@databricks.com to make sure we only have a single copy.
       root_path: /Workspace/Users/gergelj.kis@databricks.com/.bundle/${bundle.name}/${bundle.target}
+      artifact_path: /Volumes/demo/landing/data/package
+    variables:
+      wheel-package-path:
+        default: /Volumes/demo/landing/data/.internal
+      #your-service-principal:
+      #  lookup:
+      #    service_principal: <SERVICE_PRINCIPAL_NAME>
     permissions:
       - user_name: gergelj.kis@databricks.com
-        level: CAN_MANAGE
+        level: CAN_MANAGE #CAN_VIEW
+      #- service_principal_name: ${var.your-service-principal}
+      #  level: CAN_MANAGE
+    #run_as:
+    #  service_principal_name: ${var.your-service-principal}
