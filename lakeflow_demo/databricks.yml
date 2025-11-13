@@ -14,13 +14,12 @@ include:
   - resources/*/*.yml
 
 variables:
-  your-service-principal:
-    default: SP
-    type: string
-    description: service principal ID
-  wheel-package-path:
-    type: string
+  wheel_package_path:
+    default: ""
     description: Path to the Python wheel package
+  #your-service-principal:
+  #  default: ""
+  #  description: service principal ID
 
 targets:
   dev:
@@ -33,13 +32,13 @@ targets:
     workspace:
       host: https://adb-4501945468888683.3.azuredatabricks.net
     variables:
-      wheel-package-path:
+      wheel_package_path:
         default: ../dist
 
   prod:
     mode: production
     git:
-      branch: main # deployment should be done from this branch
+      branch: lakeflow-demo # deployment should be done from this branch
     
     workspace:
       host: https://adb-4501945468888683.3.azuredatabricks.net
@@ -47,8 +46,8 @@ targets:
       root_path: /Workspace/Users/gergelj.kis@databricks.com/.bundle/${bundle.name}/${bundle.target}
       artifact_path: /Volumes/demo/landing/data/package
     variables:
-      wheel-package-path:
-        default: /Volumes/demo/landing/data/.internal
+      wheel_package_path:
+        default: ${workspace.artifact_path}/.internal
       #your-service-principal:
       #  lookup:
       #    service_principal: <SERVICE_PRINCIPAL_NAME>

@@ -1,0 +1,27 @@
+resources:
+  jobs:
+    my_wheel_job_serverless:
+      name: "my_wheel_job_serverless"
+      max_concurrent_runs: 4
+      tasks:
+        - task_key: python_script_task
+          spark_python_task:
+            python_file: ../src/sample.py
+            source: WORKSPACE
+          environment_key: my_serverless_environment
+        - task_key: python_wheel_task
+          python_wheel_task:
+            package_name: hello_wheel
+            entry_point: main
+          environment_key: my_serverless_environment
+      tags:
+        dev: gergelj_kis
+      queue:
+        enabled: true
+      environments:
+        - environment_key: my_serverless_environment
+          spec:
+            dependencies:
+              - ${var.wheel_package_path}/hello_wheel-0.0.1-py3-none-any.whl
+            environment_version: "4"
+      performance_target: PERFORMANCE_OPTIMIZED

@@ -1,15 +1,22 @@
 resources:
   jobs:
-    my-wheel-job:
-      name: my-wheel-job
+    my_wheel_job:
+      name: my_wheel_job
       tasks:
-        - task_key: python_wheel_task_2
+        - task_key: python_wheel_task
           python_wheel_task:
             package_name: hello_wheel
             entry_point: main
           job_cluster_key: New_job_cluster
           libraries:
-            - whl: ${var.wheel-package-path}/hello_wheel-0.0.1-py3-none-any.whl
+            - whl: ${var.wheel_package_path}/hello_wheel-0.0.1-py3-none-any.whl
+              
+        - task_key: python_script_task
+          spark_python_task:
+            python_file: ../src/sample.py
+          job_cluster_key: New_job_cluster
+          libraries:
+            - whl: ${var.wheel_package_path}/hello_wheel-0.0.1-py3-none-any.whl
 
       job_clusters:
         - job_cluster_key: New_job_cluster
@@ -21,7 +28,6 @@ resources:
             node_type_id: Standard_DS3_v2
             spark_env_vars:
               PYSPARK_PYTHON: /databricks/python3/bin/python3
-            policy_id: 0008EDB2C486C51E
             data_security_mode: SINGLE_USER
             runtime_engine: STANDARD
             kind: CLASSIC_PREVIEW
