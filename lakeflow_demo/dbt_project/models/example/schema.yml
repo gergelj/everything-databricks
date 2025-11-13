@@ -1,0 +1,53 @@
+version: 2
+
+models:
+  - name: customers
+    description: "A table containing customer information"
+    columns:
+      - name: customer_id
+        description: "Primary key for customers"
+        tests:
+          - unique
+          - not_null
+      - name: first_name
+        description: "Customer's first name"
+      - name: last_name
+        description: "Customer's last name"
+      - name: email
+        description: "Customer's email address"
+        tests:
+          - unique
+      - name: registration_date
+        description: "Date when customer registered"
+
+  - name: orders
+    description: "A table containing order information"
+    columns:
+      - name: order_id
+        description: "Primary key for orders"
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "Foreign key to customers table"
+        tests:
+          - relationships:
+              to: ref('customers')
+              field: customer_id
+      - name: order_date
+        description: "Date when order was placed"
+      - name: total_amount
+        description: "Total amount of the order"
+        tests:
+          - not_null
+
+  - name: customer_orders_summary
+    description: "Summary of orders per customer"
+    columns:
+      - name: customer_id
+        description: "Customer identifier"
+      - name: total_orders
+        description: "Total number of orders"
+      - name: total_spent
+        description: "Total amount spent"
+
