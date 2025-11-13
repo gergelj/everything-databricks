@@ -1,0 +1,49 @@
+resources:
+  jobs:
+    my_dbt_job:
+      name: my_dbt_job
+      tasks:
+        - task_key: dbt_seed_task
+          dbt_task:
+            project_directory: ../src/dbt_project
+            commands:
+              - dbt seed
+            schema: dbt
+            warehouse_id: f615f74a7e90c8cb
+            catalog: demo
+            source: WORKSPACE
+          environment_key: dbt-default
+        - task_key: dbt_build_task
+          depends_on:
+            - task_key: dbt_seed_task
+          dbt_task:
+            project_directory: ../src/dbt_project
+            commands:
+              - dbt deps
+              - dbt build
+            schema: dbt
+            warehouse_id: f615f74a7e90c8cb
+            catalog: demo
+            source: WORKSPACE
+          environment_key: dbt-default
+        - task_key: dbt_run
+          depends_on:
+            - task_key: dbt_build_task
+          dbt_task:
+            project_directory: ../src/dbt_project
+            commands:
+              - dbt run
+            schema: dbt
+            warehouse_id: f615f74a7e90c8cb
+            catalog: demo
+            source: WORKSPACE
+          environment_key: dbt-default
+      queue:
+        enabled: true
+      environments:
+        - environment_key: dbt-default
+          spec:
+            dependencies:
+              - dbt-databricks>=1.0.0,<2.0.0
+            environment_version: "4"
+      performance_target: PERFORMANCE_OPTIMIZED

@@ -5,7 +5,7 @@ resources:
       tasks:
         - task_key: dbt_seed_task
           dbt_task:
-            project_directory: ${workspace.root_path}/dbt_project
+            project_directory: ../src/dbt_project
             commands:
               - dbt seed
           job_cluster_key: dbt_cluster
@@ -17,7 +17,7 @@ resources:
           depends_on:
             - task_key: dbt_seed_task
           dbt_task:
-            project_directory: ${workspace.root_path}/dbt_project
+            project_directory: ../src/dbt_project
             commands:
               - dbt deps
               - dbt build
@@ -30,7 +30,7 @@ resources:
           depends_on:
             - task_key: dbt_build_task
           dbt_task:
-            project_directory: ${workspace.root_path}/dbt_project
+            project_directory: ../src/dbt_project
             commands:
               - dbt test
           job_cluster_key: dbt_cluster
