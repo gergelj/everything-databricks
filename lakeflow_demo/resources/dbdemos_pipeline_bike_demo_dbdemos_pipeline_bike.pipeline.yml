@@ -1,0 +1,24 @@
+resources:
+  pipelines:
+    dbdemos_pipeline_bike_demo_dbdemos_pipeline_bike:
+      name: dbdemos_pipeline_bike_demo_dbdemos_pipeline_bike
+      configuration:
+        "catalog": "demo"
+        "schema": "dbdemos_pipeline_bike"
+      libraries:
+        - glob:
+            include: ../src/dbdemos_pipeline_bike/1-sdp-sql/transformations/**
+      catalog: demo
+      channel: CURRENT
+      continuous: false
+      event_log:
+        catalog: demo
+        name: pipeline_bike_event_logs
+        schema: dbdemos_pipeline_bike
+      photon: true
+      root_path: ../src/dbdemos_pipeline_bike
+      schema: dbdemos_pipeline_bike
+      serverless: true
+      environment:
+        dependencies:
+          - ${var.wheel_package_path}/hello_wheel-0.0.1-py3-none-any.whl
