@@ -17,6 +17,13 @@ variables:
   wheel_package_path:
     default: ""
     description: Path to the Python wheel package
+  warehouse_id:
+    default: c1bfdcf337d110ff
+    description: SQL Warehouse ID for running dbt
+  catalog:
+    default: dev_catalog
+  schema:
+    default: dev_schema
   #your-service-principal:
   #  default: ""
   #  description: service principal ID
@@ -30,10 +37,14 @@ targets:
     mode: development
     default: true
     workspace:
-      host: https://adb-4501945468888683.3.azuredatabricks.net
+      host: https://adb-4464785918184508.8.azuredatabricks.net/
     variables:
       wheel_package_path:
         default: ../dist
+      catalog:
+        default: dev_catalog
+      schema:
+        default: dev_schema
 
   prod:
     mode: production
@@ -41,13 +52,17 @@ targets:
       branch: lakeflow-demo # deployment should be done from this branch
     
     workspace:
-      host: https://adb-4501945468888683.3.azuredatabricks.net
+      host: https://adb-4464785918184508.8.azuredatabricks.net/
       # We explicitly deploy to /Workspace/Users/gergelj.kis@databricks.com to make sure we only have a single copy.
       root_path: /Workspace/Users/gergelj.kis@databricks.com/.bundle/${bundle.name}/${bundle.target}
       artifact_path: /Volumes/demo/landing/data/package
     variables:
       wheel_package_path:
         default: ${workspace.artifact_path}/.internal
+      catalog:
+        default: prod_catalog
+      schema:
+        default: prod_schema
       #your-service-principal:
       #  lookup:
       #    service_principal: <SERVICE_PRINCIPAL_NAME>
@@ -57,4 +72,4 @@ targets:
       #- service_principal_name: ${var.your-service-principal}
       #  level: CAN_MANAGE
     #run_as:
-    #  service_principal_name: ${var.your-service-principal}
+    #  service_principal_name: <SERVICE_PRINCIPAL_ID>

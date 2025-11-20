@@ -9,7 +9,7 @@ resources:
             commands:
               - dbt seed
             schema: dbt
-            warehouse_id: f615f74a7e90c8cb
+            warehouse_id: ${var.warehouse_id}
             catalog: demo
             source: WORKSPACE
           environment_key: dbt-default
@@ -22,7 +22,7 @@ resources:
               - dbt deps
               - dbt build
             schema: dbt
-            warehouse_id: f615f74a7e90c8cb
+            warehouse_id: ${var.warehouse_id}
             catalog: demo
             source: WORKSPACE
           environment_key: dbt-default
@@ -34,7 +34,7 @@ resources:
             commands:
               - dbt run
             schema: dbt
-            warehouse_id: f615f74a7e90c8cb
+            warehouse_id: ${var.warehouse_id}
             catalog: demo
             source: WORKSPACE
           environment_key: dbt-default

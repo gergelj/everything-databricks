@@ -17,6 +17,12 @@ resources:
           job_cluster_key: New_job_cluster
           libraries:
             - whl: ${var.wheel_package_path}/hello_wheel-0.0.1-py3-none-any.whl
+      
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
 
       job_clusters:
         - job_cluster_key: New_job_cluster
