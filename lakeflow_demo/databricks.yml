@@ -10,15 +10,20 @@ artifacts:
     build: python3 setup.py bdist_wheel
 
 include:
-  - resources/*.yml
-  - resources/*/*.yml
+  - resources/secret_scopes/*.yml
+  - resources/compute/*
+#  - resources/my_wheel_job.job.yml
+#  - resources/my_wheel_job_serverless.job.yml
+#  - resources/task_dependency_example.job.yml
+#  - resources/*.yml
+#  - resources/*/*.yml
 
 variables:
   wheel_package_path:
     default: ""
     description: Path to the Python wheel package
   warehouse_id:
-    default: c1bfdcf337d110ff
+    default: ${resources.sql_warehouses.dbt_sql_warehouse.id}
     description: SQL Warehouse ID for running dbt
   catalog:
     default: dev_catalog
@@ -45,6 +50,10 @@ targets:
         default: dev_catalog
       schema:
         default: dev_schema
+    resources:
+      secret_scopes:
+        my_secret_scope:
+          name: dev-secrets-scope
 
   prod:
     mode: production
