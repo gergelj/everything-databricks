@@ -10,13 +10,13 @@ artifacts:
     build: python3 setup.py bdist_wheel
 
 include:
-  - resources/secret_scopes/*.yml
-  - resources/compute/*
-#  - resources/my_wheel_job.job.yml
-#  - resources/my_wheel_job_serverless.job.yml
-#  - resources/task_dependency_example.job.yml
-#  - resources/*.yml
-#  - resources/*/*.yml
+  - resources/*.yml
+  - resources/*/*.yml
+  - tests/*.yml
+
+python:
+  resources:
+    - 'resources_py:load_resources'
 
 variables:
   wheel_package_path:
@@ -55,6 +55,17 @@ targets:
         my_secret_scope:
           name: dev-secrets-scope
 
+  test:
+    mode: production
+    presets:
+      name_prefix: '[TEST]'
+    workspace:
+      host: https://adb-7405605863279072.12.azuredatabricks.net/
+      root_path: /Workspace/Users/gergelj.kis@databricks.com/.bundle/${bundle.name}/${bundle.target}
+    permissions:
+      - user_name: gergelj.kis@databricks.com
+        level: CAN_MANAGE
+
   prod:
     mode: production
     git:
@@ -75,10 +86,10 @@ targets:
       #your-service-principal:
       #  lookup:
       #    service_principal: <SERVICE_PRINCIPAL_NAME>
-    permissions:
-      - user_name: gergelj.kis@databricks.com
-        level: CAN_MANAGE #CAN_VIEW
-      #- service_principal_name: ${var.your-service-principal}
-      #  level: CAN_MANAGE
+    #permissions:
+    #  - group_name: engineers
+    #    level: CAN_VIEW
+    #  - service_principal_name: ${var.your-service-principal}
+    #    level: CAN_MANAGE
     #run_as:
-    #  service_principal_name: <SERVICE_PRINCIPAL_ID>
+    #  service_principal_name: 557c9a9d-570e-43ca-8876-c76b35f464fa

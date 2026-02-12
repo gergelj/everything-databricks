@@ -1,0 +1,55 @@
+pool:
+  vmImage: ubuntu-latest
+
+variables: 
+- group: 'databricks-test'
+jobs:
+  - job: Deploy
+    displayName: Deploy Databricks bundle (test target)
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+      - checkout: self
+        fetchDepth: 0
+
+      - task: UsePythonVersion@0
+        displayName: "Use Python 3.11"
+        inputs:
+          versionSpec: "3.11"
+
+      - script: |
+          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+        displayName: "Install Databricks CLI"
+
+      - script: |
+          databricks --version
+        displayName: "Databricks CLI version"
+
+      - script: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+        displayName: "Install requirements"
+
+      - script: |
+          databricks bundle validate -t test
+        displayName: "Bundle validate"
+        env:
+          DATABRICKS_HOST: $(DATABRICKS_HOST)
+          DATABRICKS_CLIENT_ID: $(DATABRICKS_CLIENT_ID)
+          DATABRICKS_CLIENT_SECRET: $(DATABRICKS_CLIENT_SECRET)
+
+      - script: |
+          databricks bundle deploy -t test
+        displayName: "Bundle deploy"
+        env:
+          DATABRICKS_HOST: $(DATABRICKS_HOST)
+          DATABRICKS_CLIENT_ID: $(DATABRICKS_CLIENT_ID)
+          DATABRICKS_CLIENT_SECRET: $(DATABRICKS_CLIENT_SECRET)
+
+      - script: |
+          databricks bundle run test -t test 
+        displayName: "Run test"
+        env:
+          DATABRICKS_HOST: $(DATABRICKS_HOST)
+          DATABRICKS_CLIENT_ID: $(DATABRICKS_CLIENT_ID)
+          DATABRICKS_CLIENT_SECRET: $(DATABRICKS_CLIENT_SECRET)
