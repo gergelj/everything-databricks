@@ -16,7 +16,7 @@ include:
 
 python:
   resources:
-    - 'resources_py:load_resources'
+    - 'resources.python_jobs:load_resources'
 
 variables:
   wheel_package_path:
