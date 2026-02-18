@@ -1,0 +1,4 @@
+workspace_url = ""
+catalog_name = "demo"
+schema_name = "lakebridge"
+volume_name = "lakebridge_volume"
