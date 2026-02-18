@@ -14,6 +14,8 @@ include:
   - resources/*/*.yml
   - tests/*.yml
 
+# Bundle configuration in Python
+# See https://docs.databricks.com/aws/en/dev-tools/bundles/python/
 python:
   resources:
     - 'resources.python_jobs:load_resources'
