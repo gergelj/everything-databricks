@@ -21,6 +21,20 @@ resource "azurerm_databricks_workspace" "this" {
   ]
 }
 
+resource "databricks_disable_legacy_access_setting" "this" {
+  provider = databricks
+  disable_legacy_access {
+    value = true
+  }
+}
+
+resource "databricks_default_namespace_setting" "this" {
+  namespace {
+    value = var.catalog_name
+  }
+  depends_on = [ module.create_catalog ]
+}
+
 # assign admin access to the workspace
 
 data "databricks_user" "workspace_access" {

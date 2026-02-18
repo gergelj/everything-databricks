@@ -66,6 +66,9 @@ resource "databricks_storage_credential" "this" {
   }
   comment = "Managed identity credential managed by TF"
   depends_on = [
-    azurerm_role_assignment.this
+    azurerm_role_assignment.storage_blob_data_contributor,
+    azurerm_role_assignment.storage_account_contributor,
+    azurerm_role_assignment.storage_queue_data_contributor,
+    azurerm_role_assignment.eventgrid_eventsubscription_contributor
   ]
 }
