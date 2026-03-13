@@ -28,6 +28,7 @@ resource "azurerm_databricks_access_connector" "this" {
   identity {
     type = "SystemAssigned"
   }
+  tags = var.tags
 }
 
 data "azurerm_resource_group" "storage_account_resource_group" {
