@@ -1,0 +1,14 @@
+resources:
+  pipelines:
+    cdf_pipeline:
+      name: cdf_pipeline
+      libraries:
+        - glob:
+            include: ../src/cdf_pipeline/transformations/**
+      catalog: default_catalog
+      channel: CURRENT
+      continuous: false
+      photon: true
+      root_path: ../src/cdf_pipeline
+      schema: default
+      serverless: true
