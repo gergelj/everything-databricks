@@ -44,7 +44,7 @@ targets:
     mode: development
     default: true
     workspace:
-      host: https://adb-7405605863279072.12.azuredatabricks.net/
+      host: https://adb-7405619413954547.7.azuredatabricks.net/
     variables:
       wheel_package_path:
         default: ../dist
@@ -62,7 +62,7 @@ targets:
     presets:
       name_prefix: '[TEST]'
     workspace:
-      host: https://adb-7405605863279072.12.azuredatabricks.net/
+      host: https://adb-7405619413954547.7.azuredatabricks.net/
       root_path: /Workspace/Users/gergelj.kis@databricks.com/.bundle/${bundle.name}/${bundle.target}
     permissions:
       - user_name: gergelj.kis@databricks.com
@@ -74,7 +74,7 @@ targets:
       branch: lakeflow-demo # deployment should be done from this branch
     
     workspace:
-      host: https://adb-7405605863279072.12.azuredatabricks.net/
+      host: https://adb-7405619413954547.7.azuredatabricks.net/
       # We explicitly deploy to /Workspace/Users/gergelj.kis@databricks.com to make sure we only have a single copy.
       root_path: /Workspace/Users/gergelj.kis@databricks.com/.bundle/${bundle.name}/${bundle.target}
       artifact_path: /Volumes/demo/landing/data/package
