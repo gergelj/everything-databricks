@@ -60,6 +60,12 @@ resource "azurerm_role_assignment" "eventgrid_eventsubscription_contributor" {
   principal_id         = azurerm_databricks_access_connector.this.identity[0].principal_id
 }
 
+resource "azurerm_role_assignment" "eventgrid_data_contributor" {
+  scope                = data.azurerm_resource_group.storage_account_resource_group.id
+  role_definition_name = "EventGrid Data Contributor"
+  principal_id         = azurerm_databricks_access_connector.this.identity[0].principal_id
+}
+
 resource "databricks_storage_credential" "this" {
   name = local.storage_credential_name
   azure_managed_identity {
