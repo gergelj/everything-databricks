@@ -1,0 +1,19 @@
+resources:
+  jobs:
+    parameterized_notebook:
+      name: parameterized_notebook
+      tasks:
+        - task_key: print_parameter
+          notebook_task:
+            notebook_path: ../src/print_job_parameter
+            base_parameters:
+              greeting: "{{job.parameters.greeting}}"
+            source: WORKSPACE
+          environment_key: default
+      parameters:
+        - name: greeting
+          default: "Hello from the job!"
+      environments:
+        - environment_key: default
+      queue:
+        enabled: true
