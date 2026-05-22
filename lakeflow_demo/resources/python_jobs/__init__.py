@@ -4,6 +4,8 @@ from databricks.bundles.core import (
     load_resources_from_current_package_module,
 )
 
+from .yaml_driven_job.yaml_driven_job import load_resources as load_yaml_driven_jobs
+
 
 def load_resources(bundle: Bundle) -> Resources:
     """
@@ -12,5 +14,12 @@ def load_resources(bundle: Bundle) -> Resources:
     bundle deployment. After deployment, this function is not used.
     """
 
-    # the default implementation loads all Python files in 'resources' directory
-    return load_resources_from_current_package_module()
+    # Load statically defined jobs (e.g. my_python_job)
+    resources = load_resources_from_current_package_module()
+
+    # Load dynamically generated jobs from yaml_driven_job
+    yaml_resources = load_yaml_driven_jobs(bundle)
+    for name, job in yaml_resources.jobs.items():
+        resources.add_job(name, job)
+
+    return resources

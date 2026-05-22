@@ -4,15 +4,15 @@ bundle:
   name: lakeflow_demo
   uuid: a1e7553a-dca8-4f8e-8167-311409dee811
 
-artifacts:
-  hello_wheel:
-    type: whl
-    build: python3 setup.py bdist_wheel
+# artifacts:
+#   hello_wheel:
+#     type: whl
+#     build: python3 setup.py bdist_wheel
 
 include:
-  - resources/*.yml
-  - resources/*/*.yml
-  - tests/*.yml
+   - resources/parametrized_job.job.yml
+#   - resources/*/*.yml
+#   - tests/*.yml
 
 # Bundle configuration in Python
 # See https://docs.databricks.com/aws/en/dev-tools/bundles/python/
@@ -44,7 +44,7 @@ targets:
     mode: development
     default: true
     workspace:
-      host: https://adb-7405619413954547.7.azuredatabricks.net/
+      host: https://dbc-6ae2fcf9-29be.cloud.databricks.com/
     variables:
       wheel_package_path:
         default: ../dist
@@ -52,17 +52,17 @@ targets:
         default: dev_catalog
       schema:
         default: dev_schema
-    resources:
-      secret_scopes:
-        my_secret_scope:
-          name: dev-secrets-scope
+    # resources:
+    #   secret_scopes:
+    #     my_secret_scope:
+    #       name: dev-secrets-scope
 
   test:
     mode: production
     presets:
       name_prefix: '[TEST]'
     workspace:
-      host: https://adb-7405619413954547.7.azuredatabricks.net/
+      host: https://dbc-6ae2fcf9-29be.cloud.databricks.com/
       root_path: /Workspace/Users/gergelj.kis@databricks.com/.bundle/${bundle.name}/${bundle.target}
     permissions:
       - user_name: gergelj.kis@databricks.com
@@ -74,8 +74,8 @@ targets:
       branch: lakeflow-demo # deployment should be done from this branch
     
     workspace:
-      host: https://adb-7405619413954547.7.azuredatabricks.net/
-      # We explicitly deploy to /Workspace/Users/gergelj.kis@databricks.com to make sure we only have a single copy.
+      host: https://dbc-6ae2fcf9-29be.cloud.databricks.com/
+      # We explicitly deploy to /Workspace/Users/gergelj.kis@databricks.com to make sure we only have a single copy. This can be any workspace location.
       root_path: /Workspace/Users/gergelj.kis@databricks.com/.bundle/${bundle.name}/${bundle.target}
       artifact_path: /Volumes/demo/landing/data/package
     variables:

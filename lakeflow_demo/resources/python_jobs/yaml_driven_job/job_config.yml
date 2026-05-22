@@ -1,0 +1,13 @@
+# Each entry generates a separate job with these parameters passed to the notebook
+jobs:
+  - name: yaml_driven_job_english
+    parameters:
+      greeting: hello
+
+  - name: yaml_driven_job_english_friendly
+    parameters:
+      greeting: hi
+
+  - name: yaml_driven_job_spanish
+    parameters:
+      greeting: hola

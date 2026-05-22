@@ -1,19 +1,20 @@
 resources:
   jobs:
-    parameterized_notebook:
-      name: parameterized_notebook
+    parameterized_job:
+      name: parameterized_job
       tasks:
         - task_key: print_parameter
           notebook_task:
-            notebook_path: ../src/print_job_parameter
-            base_parameters:
-              greeting: "{{job.parameters.greeting}}"
+            notebook_path: ../src/notebook_with_parameter.ipynb
             source: WORKSPACE
           environment_key: default
+      # These parameters are pushed down to all tasks of the job
       parameters:
         - name: greeting
           default: "Hello from the job!"
       environments:
         - environment_key: default
+          spec:
+            environment_version: "5"
       queue:
         enabled: true
