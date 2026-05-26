@@ -17,6 +17,11 @@ variable "cloud_provider" {
   }
 }
 
+variable "workspace_name" {
+  description = "The name of the workspace - required for AWS and GCP workspaces"
+  type = string
+}
+
 variable "catalog_name" {
   description = "The name of the catalog"
   type = string
