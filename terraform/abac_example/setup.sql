@@ -12,3 +12,15 @@ RETURN CASE
     AND is_account_group_member(m.group_name)
 )
 END;
+
+CREATE OR REPLACE FUNCTION gergeljkis_serverless.default.filter_email(email STRING)
+DETERMINISTIC
+RETURNS STRING
+RETURN '***@***'
+END;
+
+CREATE OR REPLACE FUNCTION gergeljkis_serverless.default.filter_age(age INT)
+DETERMINISTIC
+RETURNS INT
+RETURN 0
+END;
