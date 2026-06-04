@@ -29,6 +29,7 @@ resource "databricks_policy_info" "tenant_rls" {
       }
     ]
   }
+  depends_on = [ resource.databricks_tag_policy.tag_rls ]
 }
 
 resource "databricks_policy_info" "email_mask" {
@@ -58,6 +59,8 @@ resource "databricks_policy_info" "email_mask" {
     function_name = "${var.catalog_name}.${var.schema_name}.filter_email"
     on_column = "mask_col"
   }
+
+  depends_on = [ resource.databricks_tag_policy.tag_mask ]
 }
 
 resource "databricks_policy_info" "age_mask" {
@@ -87,4 +90,6 @@ resource "databricks_policy_info" "age_mask" {
     function_name = "${var.catalog_name}.${var.schema_name}.filter_age"
     on_column = "mask_col"
   }
+
+  depends_on = [ resource.databricks_tag_policy.tag_mask ]
 }
