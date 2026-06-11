@@ -2,6 +2,10 @@
 
 Parameters:
 - Source System: 
+- Data Sources:
+    - [change this] SQL Server: Lakeflow Connect
+    - [change this] S3 bucket: AutoLoader
+    - etc.
 - Target technology: Spark Declarative Pipeline (SQL or Python)
 
 Chapters to include in the data warehouse migration plan:
