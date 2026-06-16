@@ -8,7 +8,7 @@
 
 ## How to use
 
-Save this **MIGRATION.md** document in your workspace directory structure, and fill out the Input Parameters section with your migration information. After, execute the different Milestones with Genie Code prompt-by-prompt:
+Save the **MIGRATION.md** document in your workspace and fill out the Input Parameters section with your information. After, execute the different Milestones with Genie Code prompt-by-prompt:
 
 - Create a migration plan document:
     ```
