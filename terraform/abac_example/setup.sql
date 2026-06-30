@@ -42,6 +42,14 @@ CREATE OR REPLACE FUNCTION filter_users_rls(tenant STRING)
 RETURNS BOOLEAN
 RETURN CASE
     WHEN tenant IS NULL THEN FALSE
+    WHEN is_account_group_member('abac_demo_group_1') AND tenant = 'tenantB' THEN TRUE
+    ELSE FALSE
+END;
+
+CREATE OR REPLACE FUNCTION filter_users_rls_with_mapping(tenant STRING)
+RETURNS BOOLEAN
+RETURN CASE
+    WHEN tenant IS NULL THEN FALSE
     ELSE EXISTS (
         SELECT
         1
