@@ -10,6 +10,6 @@ provider "databricks" {
   alias      = "accounts"
   host       = local.account_host
   account_id = var.databricks_account_id
-  profile = var.databricks_cli_profile
+  profile = "account"
   auth_type = "databricks-cli"
 }

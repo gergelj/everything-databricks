@@ -30,9 +30,5 @@ variable "catalog_name" {
 variable "schema_name" {
   description = "The name of the schema"
   type = string
-}
-
-variable "databricks_cli_profile" {
-  description = "The profile of the Databricks CLI"
-  type = string
+  default = "abac_demo"
 }

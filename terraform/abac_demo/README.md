@@ -1,22 +1,29 @@
 # Databricks Attribute-Based Access Control (ABAC) Demo
 
+## Note
+
+The Data Classification Terraform resource contains a bug at the moment, so this demo doesn't rely on the automated data classification tags. The two system tags (age and email address) are assigned in the Terraform project. At a later stage, when Data Classification can be enabled via Terraform, these manual assignments will be dropped from this demo.
+
+If you want to enable automatic Data Classification in the UI, refer to the ABAC playbook.
+
+## About the demo
+
 This example demonstrates how to implement Attribute-Based Access Control (ABAC) in Databricks using Unity Catalog policies. The demo showcases:
 
 - **Row-Level Security (RLS)**: Filtering rows based on user group membership and tenant attributes
-- **Column Masking**: Masking sensitive data (email and age) based on column tags
+- **Column Masking**: Masking sensitive data (email and age) based on data classification tags
 - **Tag-Based Governance**: Using governed tags to apply policies dynamically
 
 ## Architecture
 
 The solution consists of two main components:
 
-1. **SQL Setup** (`setup.sql`): Creates demo tables, data, and security functions
+1. **SQL Setup** (`setup.sql`): Creates demo tables, data, and functions
 2. **Terraform Configuration** (`tf/`): Deploys ABAC policies, tags, and groups
 
 ### Key Components
 
-- **Demo Table**: `users_demo` - Contains user records with tenant information
-- **Mapping Table**: `group_tenant_mapping` - Maps Databricks groups to tenant names
+- **Demo Table**: `user` - Contains user records with tenant information
 - **RLS Function**: `filter_users_rls` - Filters rows based on group membership
 - **Masking Functions**: `filter_email`, `filter_age` - Mask sensitive columns
 
@@ -25,26 +32,27 @@ The solution consists of two main components:
 - Databricks workspace (AWS, Azure, or GCP)
 - Unity Catalog enabled
 - Terraform installed
-- Databricks CLI configured
-- Account admin access for group and workspace assignment management
+- Databricks CLI login configured for the workspace
+  - `databricks auth login --host <workspace_url>`
+- Databricks CLI login configured for account-level access
+  - `databricks auth login --host <account_host> --account-id <databricks_account_id> --profile account`
 
 ## Setup Instructions
 
 ### 1. Prepare SQL Objects
 
-Run the SQL setup script to create the demo tables and functions:
+Run the SQL [setup](./setup.sql) script to create the demo tables and functions. Edit the first variable to match your catalog:
 
 ```sql
--- Edit the variables in setup.sql to match your environment
-DECLARE OR REPLACE VARIABLE catalog_name STRING DEFAULT 'your_catalog';
-DECLARE OR REPLACE VARIABLE schema_name STRING DEFAULT 'your_schema';
-
--- Then run the entire setup.sql script
+DECLARE OR REPLACE VARIABLE catalog_name STRING DEFAULT '<YOUR_CATALOG>';
 ```
 
+Then run the whole script.
+
+
 This creates:
-- `users_demo` table with 10 sample users across 3 tenants
-- `group_tenant_mapping` table linking groups to tenants
+- `abac_demo` schema in your catalog
+- `user` table with 10 sample users across 3 tenants
 - RLS function that checks group membership
 - Column masking functions for email and age
 
@@ -65,8 +73,6 @@ workspace_name          = "your-workspace-name"  # Required for AWS/GCP
 databricks_account_id   = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 cloud_provider          = "aws"  # or "azure", "gcp"
 catalog_name            = "your_catalog"
-schema_name             = "your_schema"
-databricks_cli_profile  = "your-profile"
 ```
 
 ### 3. Deploy with Terraform
@@ -83,16 +89,16 @@ This will create:
 - Account group `abac_demo_group_1`
 - Group membership (adds current user)
 - Workspace access for the group
-- Governed tags (`ABAC_DEMO_RLS`, `ABAC_DEMO_MASK`)
+- Governed tags (`abac_demo_rls` with value `tenant`)
 - Tag assignments to table columns
-- ABAC policies for RLS and column masking
+- ABAC policies for RLS (based on the tenant) and column masking (for email and age columns)
 
 ## How It Works
 
 ### Row-Level Security
 
-1. The `ABAC_DEMO_RLS` tag is applied to the `tenant_name` column
-2. The `tenant_rls` policy matches columns with this tag
+1. The `abac_demo_rls` tag with value `tenant` is applied to the `tenant_name` column
+2. The `tenant_row_isolation` policy matches columns with this tag
 3. For matched columns, the policy calls `filter_users_rls(tenant_name)`
 4. The function checks if the user belongs to a group mapped to that tenant
 5. Users only see rows for their assigned tenant(s)
@@ -101,9 +107,9 @@ This will create:
 
 ### Column Masking
 
-1. The `ABAC_DEMO_MASK` tag (with values `email`, `age`) is applied to respective columns
-2. The `email_mask` policy matches columns tagged with `ABAC_DEMO_MASK:email`
-3. The `age_mask` policy matches columns tagged with `ABAC_DEMO_MASK:age`
+1. The system tags `class.age` and `class.email_address` are automatically applied to respective columns via the automatic Data Classification on the catalog
+2. The `mask_classified_ages` policy matches columns tagged with `class.age`
+3. The `mask_classified_emails` policy matches columns tagged with `class.email_address`
 4. Masking functions replace actual values with:
    - Email: `***@***`
    - Age: `0`
@@ -116,13 +122,16 @@ Policies are applied at the catalog level and automatically affect all tables wi
 - `match_columns`: Targets columns based on tag conditions
 - `row_filter` or `column_mask`: Specifies the function to apply
 
+# TODO:
 ## Testing the Demo
 
 ### As a Group Member
 
 ```sql
+USE CATALOG <YOUR_CATALOG>;
+
 -- Query as a user in abac_demo_group_1
-SELECT * FROM your_catalog.your_schema.users_demo;
+SELECT * FROM abac_demo.user;
 
 -- Expected results:
 -- - Only rows with tenant_name = 'tenantB' (Bob, Edward, Hannah)
@@ -146,18 +155,15 @@ resource "databricks_policy_info" "tenant_rls" {
 To remove all resources:
 
 ```bash
-cd tf
 terraform destroy
 ```
 
 Then manually drop the SQL objects:
 
 ```sql
-DROP TABLE IF EXISTS your_catalog.your_schema.users_demo;
-DROP TABLE IF EXISTS your_catalog.your_schema.group_tenant_mapping;
-DROP FUNCTION IF EXISTS your_catalog.your_schema.filter_users_rls;
-DROP FUNCTION IF EXISTS your_catalog.your_schema.filter_email;
-DROP FUNCTION IF EXISTS your_catalog.your_schema.filter_age;
+USE CATALOG <YOUR_CATALOG>;
+
+DROP SCHEMA IF EXISTS abac_demo CASCADE;
 ```
 
 ## Key Concepts
@@ -186,3 +192,21 @@ Policies use conditions to determine which columns/tables they apply to:
 - [Databricks Unity Catalog ABAC Documentation](https://docs.databricks.com/en/data-governance/unity-catalog/abac.html)
 - [Row and Column Filters](https://docs.databricks.com/en/data-governance/unity-catalog/manage-privileges/row-and-column-filters.html)
 - [Terraform Provider - databricks_policy_info](https://registry.terraform.io/providers/databricks/databricks/latest/docs/resources/policy_info)
+
+## Troubleshooting
+
+### During the regular resource cleanup I get an error regarding the state of the resources
+
+**Solution** Delete the state files.
+
+### During the regular resource cleanup the governed tag `abac_demo_rls` was not deleted and locally it is cleared from the state
+
+**Solution** Import the tag into the state:
+
+```sh
+terraform import databricks_tag_policy.tag_rls "abac_demo_rls"
+```
+
+### Invalid condition in policy 'tenant_row_isolation'. Compilation error with message 'Unknown tag policy key `abac_demo_rls`'.
+
+**Solution** This error only occurs in Azure, working on a fix to solve this. A re-run of `terraform apply` solves this issue.

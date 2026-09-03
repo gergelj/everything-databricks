@@ -1,15 +1,10 @@
 data "databricks_current_user" "me" {
 }
 
-locals {
-    users_demo_table_name = "${var.catalog_name}.${var.schema_name}.users_demo"
-    group_tenant_mapping_table_name = "${var.catalog_name}.${var.schema_name}.group_tenant_mapping"
-}
-
-
 resource "databricks_group" "group" {
   provider = databricks.accounts
   display_name = "abac_demo_group_1"
+  force = true
 }
 
 resource "databricks_group_member" "group_member" {
