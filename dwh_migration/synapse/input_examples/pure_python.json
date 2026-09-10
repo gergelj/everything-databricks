@@ -1,0 +1,83 @@
+{
+	"name": "pure_python",
+	"properties": {
+		"folder": {
+			"name": "synapse-notebooks"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "test",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "false",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2",
+				"spark.autotune.trackingId": "637eab2c-9195-49d2-a182-622954ad0692"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/edd4cc45-85c7-4aec-8bf5-648062d519bf/resourceGroups/gergeljkis-rg/providers/Microsoft.Synapse/workspaces/gergeljkis-synapse/bigDataPools/test",
+				"name": "test",
+				"type": "Spark",
+				"endpoint": "https://gergeljkis-synapse.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/test",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "3.5",
+				"nodeCount": 3,
+				"cores": 4,
+				"memory": 28,
+				"automaticScaleJobs": false
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"This notebook's default language is Python and contains only Python code blocks."
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"print(\"hello world\")"
+				],
+				"execution_count": 6
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"print(\"second hello\")"
+				],
+				"execution_count": 7
+			}
+		]
+	}
+}
