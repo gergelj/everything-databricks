@@ -20,7 +20,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "19296d61-7619-4a80-bc88-554524d6b7c6"
+				"spark.autotune.trackingId": "42bee664-b711-4b5c-89a3-7bdf368f8283"
 			}
 		},
 		"metadata": {
@@ -51,6 +51,19 @@
 			"sessionKeepAliveTimeout": 30
 		},
 		"cells": [
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"This notebook's default language is Python and contains mixed code blocks (Python and SQL)."
+				]
+			},
 			{
 				"cell_type": "code",
 				"source": [
