@@ -20,7 +20,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "cb9edd02-d965-42df-b08d-835c14703880"
+				"spark.autotune.trackingId": "6e0ae861-a527-450c-915c-29b10041cc00"
 			}
 		},
 		"metadata": {
@@ -62,14 +62,17 @@
 					"%%pyspark\n",
 					"print(\"hello world\")"
 				],
-				"execution_count": 4
+				"execution_count": 2
 			},
 			{
 				"cell_type": "code",
+				"metadata": {
+					"collapsed": false
+				},
 				"source": [
 					"SELECT 'HELLO WORLD';"
 				],
-				"execution_count": null
+				"execution_count": 3
 			}
 		]
 	}
