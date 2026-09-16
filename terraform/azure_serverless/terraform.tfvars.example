@@ -1,0 +1,32 @@
+#
+# RENAME THIS FILE TO terraform.tfvars
+#
+
+# =============================================================================
+# Azure Configuration
+# =============================================================================
+
+tenant_id = "xxx"
+azure_subscription_id = "xxx"
+tags = {
+    "Owner": "Name Of Owner"
+}
+
+# =============================================================================
+# Databricks Workspace Configuration
+# =============================================================================
+
+resource_group_name = "new-resource-group"
+workspace_name = "databricks-workspace"
+location = "westeurope"
+databricks_account_id = "xxx-xxx"
+
+# =============================================================================
+# Unity Catalog and Storage Configuration
+# =============================================================================
+
+existing_metastore_id = "xxx-xxx"
+new_metastore_name = ""
+catalog_name = "demo"
+storage_account_name = "ucstorage"
+storage_container_name = "demo"
