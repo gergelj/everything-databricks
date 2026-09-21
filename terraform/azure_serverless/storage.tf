@@ -8,5 +8,6 @@ module "connect_storage" {
   resource_group = var.resource_group_name
   location = var.location
   storage_account_name = var.storage_account_name
+  public_network_access_enabled = false
   tags = var.tags
 }

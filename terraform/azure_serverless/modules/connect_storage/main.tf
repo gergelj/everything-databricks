@@ -13,6 +13,7 @@ resource "azurerm_storage_account" "this" {
   account_tier             = "Standard"
   account_replication_type = "LRS"
   is_hns_enabled           = true
+  public_network_access_enabled = var.public_network_access_enabled
 }
 
 data "azurerm_storage_account" "this" {

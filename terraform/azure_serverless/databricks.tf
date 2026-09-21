@@ -14,6 +14,7 @@ module "databricks" {
 
   tags = var.tags
   enable_telemetry = false
+  public_network_access_enabled = true
 }
 
 # =============================================================================
