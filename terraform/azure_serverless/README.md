@@ -1,11 +1,14 @@
 # Azure Databricks Serverless Workspace (Terraform)
 
-Provisions a **serverless Azure Databricks workspace** with Unity Catalog wired up end to end:
+Provisions a **serverless Azure Databricks workspace** with Unity Catalog and
+**private networking** wired up end to end:
 
-- A premium, serverless-mode Databricks workspace (via the [Azure AVM module](https://registry.terraform.io/modules/Azure/avm-res-databricks-workspace/azurerm/latest)).
+- A premium, serverless Databricks workspace (via the [Azure AVM module](https://registry.terraform.io/modules/Azure/avm-res-databricks-workspace/azurerm/latest)).
 - A Unity Catalog metastore assignment (create a new metastore or attach an existing one).
-- An Azure storage account + access connector (managed identity) for UC storage.
+- A **private** Azure ADLS Gen2 storage account (public network access disabled) + access connector (managed identity) for UC storage.
 - A UC storage credential, external location, and catalog backed by that storage.
+- **Front-end PrivateLink**: a private endpoint for the workspace web UI + REST API (`databricks_ui_api`), a private DNS zone, and a VNet link.
+- **Back-end private connectivity for serverless**: a Network Connectivity Configuration (NCC) bound to the workspace, with private endpoint rules to the storage account (blob + dfs) that are auto-approved on the storage side.
 - (Optional) Workspace admin access for a Databricks account group.
 
 
@@ -13,25 +16,32 @@ Provisions a **serverless Azure Databricks workspace** with Unity Catalog wired 
 ## Architecture
 
 ```
-                         ┌─────────────────────────────────────────┐
-                         │  Azure Subscription / Resource Group    │
-                         │                                         │
-  module.databricks ────►│  Databricks Workspace (Serverless)      │
-                         │                                         │
-  module.connect_storage►│  Storage Account (ADLS Gen2)            │
-                         │  Databricks Access Connector (MSI)      │
-                         │  Role assignments (Blob/Queue/EventGrid)│
-                         └─────────────────────────────────────────┘
+                         ┌─────────────────────────────────────────────┐
+                         │  Azure Subscription / Resource Group        │
+                         │                                             │
+  module.databricks ────►│  Databricks Workspace (Serverless)          │
+                         │                                             │
+  module.connect_storage►│  Storage Account (ADLS Gen2, private)       │
+                         │  Databricks Access Connector (MSI)          │
+                         │  Role assignments (Blob/Queue/EventGrid)    │
+                         │                                             │
+  frontend_privatelink ─►│  Private Endpoint (databricks_ui_api)       │
+                         │  Private DNS zone + VNet link               │
+                         └─────────────────────────────────────────────┘
                                           │
         databricks.account provider       │   default (workspace) provider
         (accounts.azuredatabricks.net)    ▼   (adb-<id>.azuredatabricks.net)
-                         ┌─────────────────────────────────────────┐
-                         │  Unity Catalog                          │
-                         │   • Metastore + assignment              │
-                         │   • Storage credential                  │
-                         │   • External location                   │
-                         │   • Catalog                             │
-                         └─────────────────────────────────────────┘
+                         ┌─────────────────────────────────────────────┐
+                         │  Unity Catalog                              │
+                         │   • Metastore + assignment                  │
+                         │   • Storage credential                      │
+                         │   • External location                       │
+                         │   • Catalog                                 │
+                         │                                             │
+                         │  Network Connectivity Config (NCC)          │
+                         │   • Workspace binding                       │
+                         │   • Private endpoint rules (blob, dfs) ─────┼──► auto-approved
+                         └─────────────────────────────────────────────┘      on storage
 ```
 
 
@@ -44,8 +54,9 @@ Provisions a **serverless Azure Databricks workspace** with Unity Catalog wired 
   az login
   az account set --subscription <your-subscription-id>
   ```
-- **Databricks account admin** rights (needed to create/assign metastores and manage workspace permission assignments at the account level).
+- **Databricks account admin** rights (needed to create/assign metastores, manage workspace permission assignments, and create the NCC + private endpoint rules at the account level).
 - An existing **Azure resource group** (`resource_group_name`) — this project deploys *into* it and does not create it.
+- An existing **VNet and subnet** for the front-end PrivateLink private endpoint (`privatelink_vnet_id`, `privatelink_subnet_id`). This project does not create them.
 - Authentication is via the **Azure CLI**. Both the account-level and workspace-level Databricks providers authenticate using your `az login` session and tenant ID — no PAT or service principal secret is required.
 
 
@@ -55,13 +66,19 @@ Provisions a **serverless Azure Databricks workspace** with Unity Catalog wired 
 Two `databricks` providers are configured in `providers.tf`:
 
 
-| Provider                       | Endpoint                                         | Used for                                                                                 |
-| ------------------------------ | ------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| `databricks.account` (aliased) | `accounts.azuredatabricks.net`                   | Account-level objects: metastore, metastore assignment, workspace permission assignments |
-| `databricks` (default)         | `https://adb-<workspace-id>.azuredatabricks.net` | Workspace-level Unity Catalog objects: storage credential, external location, catalog    |
+| Provider                       | Endpoint                                         | Used for                                                                                                     |
+| ------------------------------ | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `databricks.account` (aliased) | `accounts.azuredatabricks.net`                   | Account-level objects: metastore, metastore assignment, workspace permission assignments, NCC + PE rules     |
+| `databricks` (default)         | `https://adb-<workspace-id>.azuredatabricks.net` | Workspace-level Unity Catalog objects: storage credential, external location, catalog                        |
 
 
 The default provider's host is derived from the workspace module output, so it resolves automatically after the workspace is created.
+
+In addition to `azurerm` and the two `databricks` providers, the configuration
+uses the **`azapi`** provider (to auto-approve the NCC private endpoint
+connections on the storage account) and the **`modtm`** provider (a transitive
+dependency of the AVM workspace module). See `versions.tf` for the pinned
+version constraints.
 
 ## Configuration
 
@@ -87,6 +104,8 @@ cp terraform.tfvars.example terraform.tfvars
 | `catalog_name`           | ✅        | —       | Name of the Unity Catalog catalog to create                                                |
 | `storage_account_name`   | ✅        | —       | Name of the ADLS Gen2 storage account (3–24 lowercase alphanumeric chars, globally unique) |
 | `storage_container_name` | ✅        | —       | Name of the storage container / UC root path                                               |
+| `privatelink_subnet_id`  | ✅        | —       | Resource ID of the existing subnet where the `databricks_ui_api` private endpoint is created |
+| `privatelink_vnet_id`    | ✅        | —       | Resource ID of the existing VNet the `privatelink.azuredatabricks.net` DNS zone is linked to |
 | `existing_metastore_id`  | —        | `""`    | Attach an existing metastore. Leave empty to create a new one                              |
 | `new_metastore_name`     | —        | `""`    | Name for a new metastore (only used when `existing_metastore_id` is empty)                 |
 | `tags`                   | —        | `{}`    | Map of tags applied to resources                                                           |
@@ -113,10 +132,44 @@ catalog_name           = "demo"
 storage_account_name   = "myucstorage"   # must be globally unique, lowercase alphanumeric
 storage_container_name = "demo"
 
+# Front-end PrivateLink (existing VNet + subnet)
+privatelink_subnet_id = "/subscriptions/.../resourceGroups/.../providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/<subnet>"
+privatelink_vnet_id   = "/subscriptions/.../resourceGroups/.../providers/Microsoft.Network/virtualNetworks/<vnet>"
+
 tags = {
   Owner = "your.name@example.com"
 }
 ```
+
+
+
+## Networking
+
+This deployment locks down both directions of network access:
+
+- **Storage account is private.** `module.connect_storage` creates the ADLS Gen2
+  account with `public_network_access_enabled = false`, so it is not reachable
+  over the public internet.
+- **Serverless → storage (back end).** A **Network Connectivity Configuration
+  (NCC)** is created and bound to the workspace (`ncc.tf`), with private endpoint
+  rules for the `blob` and `dfs` sub-resources of the storage account. The blob
+  and dfs rules are created sequentially (with a short `time_sleep` between them)
+  to avoid overloading the account API. Serverless compute uses these rules to
+  reach the storage account privately.
+- **Auto-approval on storage.** `ncc_auto_approve.tf` reads the pending private
+  endpoint connections on the storage account and approves them via the `azapi`
+  provider, so you don't have to approve them by hand in the Azure portal. The
+  two connections are approved sequentially to avoid a `409
+  StorageAccountOperationInProgress` conflict.
+- **Workspace UI/API (front end).** `frontend_privatelink.tf` creates a private
+  endpoint for the `databricks_ui_api` sub-resource in your subnet, plus a
+  `privatelink.azuredatabricks.net` private DNS zone linked to your VNet so the
+  workspace hostname resolves to the private IP.
+
+> **Note:** `public_network_access_enabled` is intentionally left **`true`** on
+> the *workspace* (see `databricks.tf`), so the workspace UI/API remains
+> reachable publicly *and* over the front-end private endpoint. Set it to
+> `false` if you want to force private-only access.
 
 
 
@@ -156,12 +209,15 @@ Assigning a Databricks account group as workspace admin is scaffolded but commen
 ```
 .
 ├── databricks.tf              # Workspace module + (optional) admin access
-├── storage.tf                 # connect_storage module (storage account, access connector, roles)
+├── storage.tf                 # connect_storage module (private storage account, access connector, roles)
 ├── unity_catalog.tf           # Metastore, metastore assignment, catalog module
+├── ncc.tf                     # NCC, workspace binding, private endpoint rules (blob, dfs)
+├── ncc_auto_approve.tf        # Auto-approve NCC private endpoint connections on the storage account (azapi)
+├── frontend_privatelink.tf    # Front-end PrivateLink: private endpoint (databricks_ui_api), DNS zone, VNet link
 ├── providers.tf               # azurerm + two databricks providers (account + workspace)
 ├── variables.tf               # Input variables
 ├── outputs.tf                 # Outputs
-├── versions.tf                # Terraform + provider version constraints
+├── versions.tf                # Terraform + provider version constraints (azurerm, databricks, azapi, modtm)
 ├── terraform.tfvars.example   # Copy to terraform.tfvars and fill in
 └── modules/
     ├── connect_storage/       # Storage account, access connector, role assignments, storage credential
