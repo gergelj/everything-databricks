@@ -30,3 +30,12 @@ new_metastore_name = ""
 catalog_name = "demo"
 storage_account_name = "ucstorage"
 storage_container_name = "demo"
+
+# =============================================================================
+# Front-end PrivateLink Configuration
+# =============================================================================
+
+# Existing subnet where the databricks_ui_api private endpoint is created.
+privatelink_subnet_id = "/subscriptions/xxx/resourceGroups/xxx/providers/Microsoft.Network/virtualNetworks/xxx/subnets/xxx"
+# Existing VNet the privatelink.azuredatabricks.net DNS zone is linked to.
+privatelink_vnet_id   = "/subscriptions/xxx/resourceGroups/xxx/providers/Microsoft.Network/virtualNetworks/xxx"
