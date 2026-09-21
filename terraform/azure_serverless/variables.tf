@@ -83,3 +83,17 @@ variable "storage_container_name" {
   type        = string
   description = "Name of the storage container"
 }
+
+# # =============================================================================
+# # Front-end PrivateLink Configuration
+# # =============================================================================
+
+variable "privatelink_subnet_id" {
+  description = "Resource ID of the existing subnet in your VNet where the databricks_ui_api private endpoint will be created."
+  type        = string
+}
+
+variable "privatelink_vnet_id" {
+  description = "Resource ID of the existing VNet that the privatelink.azuredatabricks.net private DNS zone will be linked to."
+  type        = string
+}
