@@ -1,0 +1,9 @@
+# The schema is part of the bundle, so every environment (including each
+# developer's dev copy) is created and destroyed consistently.
+# In dev, the schema name becomes dev_<user>_claims automatically.
+resources:
+  schemas:
+    claims:
+      catalog_name: ${var.catalog}
+      name: claims
+      comment: Claims analytics (managed by the harel_claims bundle)

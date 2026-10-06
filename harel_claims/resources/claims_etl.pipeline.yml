@@ -1,0 +1,13 @@
+resources:
+  pipelines:
+    claims_etl:
+      name: harel_claims_etl
+      catalog: ${var.catalog}
+      schema: ${resources.schemas.claims.name}
+      serverless: true
+      root_path: ../src/claims_etl
+      libraries:
+        - glob:
+            include: ../src/claims_etl/transformations/**
+      configuration:
+        landing_path: /Volumes/${var.catalog}/${resources.schemas.claims.name}/${resources.volumes.landing.name}/claims

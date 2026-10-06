@@ -1,0 +1,105 @@
+# Azure DevOps equivalent of .github/workflows/ci.yml + cd.yml.
+#
+# Auth: each stage uses an Azure Resource Manager service connection configured with
+# Workload Identity Federation (no client secret). The identity behind it must be added
+# to the Databricks workspace as a service principal. AzureCLI@2 logs in, and the
+# Databricks CLI picks up that session via DATABRICKS_AUTH_TYPE=azure-cli.
+#
+# Approvals: put a required approver check on the `harel-claims-prod` environment
+# (Pipelines > Environments > Approvals and checks).
+
+trigger:
+  branches:
+    include: [main]
+
+# `pr:` applies to GitHub-hosted repos. For Azure Repos, add this pipeline as a
+# Build Validation branch policy on `main` instead.
+pr:
+  branches:
+    include: [main]
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - group: harel-claims-databricks   # DATABRICKS_HOST_STG, DATABRICKS_HOST_PROD
+
+stages:
+  - stage: CI
+    jobs:
+      - job: test_and_validate
+        steps:
+          - template: .azure/setup.yml
+          - script: |
+              uv sync --group dev
+              uv run ruff check .
+              uv run pytest -v --junitxml=test-results.xml
+            displayName: Lint and unit tests
+          - task: PublishTestResults@2
+            condition: always()
+            inputs: { testResultsFiles: test-results.xml }
+          - task: AzureCLI@2
+            displayName: Validate and plan staging
+            inputs:
+              azureSubscription: sc-databricks-staging
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                databricks bundle validate --strict -t staging
+                databricks bundle plan -t staging
+            env:
+              DATABRICKS_AUTH_TYPE: azure-cli
+              DATABRICKS_HOST: $(DATABRICKS_HOST_STG)
+
+  - stage: Staging
+    dependsOn: CI
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: deploy_staging
+        environment: harel-claims-staging
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                - template: .azure/setup.yml
+                - task: AzureCLI@2
+                  displayName: Deploy staging + integration run
+                  inputs:
+                    azureSubscription: sc-databricks-staging
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      databricks bundle deploy -t staging --auto-approve
+                      databricks bundle run sample_data -t staging
+                      databricks bundle run claims_daily -t staging
+                  env:
+                    DATABRICKS_AUTH_TYPE: azure-cli
+                    DATABRICKS_HOST: $(DATABRICKS_HOST_STG)
+
+  - stage: Prod
+    dependsOn: Staging
+    jobs:
+      - deployment: deploy_prod
+        environment: harel-claims-prod     # approval check lives here
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                - template: .azure/setup.yml
+                - task: AzureCLI@2
+                  displayName: Deploy prod
+                  inputs:
+                    azureSubscription: sc-databricks-prod
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      # ADO checks out a detached HEAD; tell the bundle which branch this is
+                      # so the prod `git.branch: main` guard can verify it.
+                      git checkout -B main
+                      databricks bundle plan -t prod
+                      databricks bundle deploy -t prod --auto-approve
+                  env:
+                    DATABRICKS_AUTH_TYPE: azure-cli
+                    DATABRICKS_HOST: $(DATABRICKS_HOST_PROD)

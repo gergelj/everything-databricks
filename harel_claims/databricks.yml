@@ -1,0 +1,112 @@
+# Harel claims analytics — Declarative Automation Bundle (DAB)
+#
+# One repo, one bundle, three targets:
+#   dev     -> each engineer gets an isolated copy (prefixed names, personal schema, paused schedules)
+#   staging -> deployed by CI from `main`, runs as a service principal, production-like
+#   prod    -> deployed by CD after approval, runs as a service principal, only from `main`
+bundle:
+  name: harel_claims
+  # Pin the CLI so laptops and CI agents behave identically.
+  databricks_cli_version: ">= 1.17.0, < 2.0.0"
+
+include:
+  - resources/*.yml
+
+# Build the Python wheel on every deploy. The job tasks reference ../dist/*.whl.
+artifacts:
+  harel_claims_lib:
+    type: whl
+    build: uv build --wheel
+    path: .
+
+variables:
+  catalog:
+    description: Unity Catalog catalog for this environment
+  service_principal_id:
+    description: Application (client) ID of the SP that owns and runs prod/staging workloads
+    default: ""
+  alert_email:
+    description: Where job failure notifications go
+    default: data-platform-alerts@harel.example.com
+
+targets:
+  dev:
+    # Development mode: names are prefixed with [dev <user>], UC schemas with dev_<user>_,
+    # schedules/triggers are paused, and pipelines run in development mode.
+    mode: development
+    default: true
+    workspace:
+      host: https://dbc-88b80a28-2fb2.cloud.databricks.com/
+    variables:
+      catalog: harel_dev
+    # Target-scoped resource: synthetic data exists in dev/staging only, never in prod.
+    resources: &sample_data_resources
+      jobs:
+        sample_data:
+          name: harel_claims_sample_data
+          tasks:
+            - task_key: generate
+              environment_key: default
+              python_wheel_task:
+                package_name: harel_claims
+                entry_point: generate_sample_data
+                parameters:
+                  - --landing-path
+                  - /Volumes/${var.catalog}/${resources.schemas.claims.name}/${resources.volumes.landing.name}/claims
+                  - --num-claims
+                  - "500"
+          environments:
+            - environment_key: default
+              spec:
+                environment_version: "4"
+                dependencies:
+                  - ./dist/harel_claims-0.1.0-py3-none-any.whl
+
+  staging:
+    mode: production
+    workspace:
+      host: https://dbc-88b80a28-2fb2.cloud.databricks.com/
+      root_path: /Workspace/harel/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      catalog: harel_stg
+      service_principal_id: 773e166e-a3e8-4f0f-bf92-9747db9b3c91
+    resources: *sample_data_resources
+    run_as:
+      service_principal_name: ${var.service_principal_id}
+    permissions:
+      # The CI identity owns staging; it is also the run_as principal.
+      - level: CAN_MANAGE
+        service_principal_name: ${var.service_principal_id}
+      # Demo only: the presenter deploys staging from a laptop. In a real setup only CI deploys here.
+      - level: CAN_MANAGE
+        user_name: gergelj.kis@databricks.com
+      # - level: CAN_MANAGE
+      #   group_name: harel-claims-engineers
+    presets:
+      tags:
+        env: staging
+        owner: claims-data-team
+
+  prod:
+    mode: production
+    workspace:
+      host: https://dbc-88b80a28-2fb2.cloud.databricks.com/
+      root_path: /Workspace/harel/.bundle/${bundle.name}/${bundle.target}
+    # Refuse to deploy prod from anything but main (override needs an explicit --force).
+    git:
+      branch: main
+    variables:
+      catalog: harel_prod
+      service_principal_id: 773e166e-a3e8-4f0f-bf92-9747db9b3c91
+    run_as:
+      service_principal_name: ${var.service_principal_id}
+    # Humans can look and re-run in prod, but only the SP (via CI/CD) changes things.
+    # permissions:
+    #   - level: CAN_VIEW
+    #     group_name: harel-claims-engineers
+    #   - level: CAN_MANAGE_RUN
+    #     group_name: harel-claims-operators
+    presets:
+      tags:
+        env: prod
+        owner: claims-data-team

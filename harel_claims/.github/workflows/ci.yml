@@ -1,0 +1,45 @@
+# Pull request checks: lint, unit test, validate every target, and show the staging plan.
+# No long-lived secrets: the job authenticates to Databricks with GitHub OIDC
+# (workload identity federation) via a federation policy on the CI service principal.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  id-token: write   # required for OIDC token exchange
+  contents: read
+
+concurrency:
+  group: ci-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "17" }
+      - run: uv sync --group dev
+      - run: uv run ruff check .
+      - run: uv run pytest -v
+
+  validate:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: staging      # holds DATABRICKS_HOST / DATABRICKS_CLIENT_ID as environment variables
+    env:
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: databricks/setup-cli@main
+      - name: Validate staging
+        run: databricks bundle validate --strict -t staging
+      - name: Plan staging (what would change?)
+        run: databricks bundle plan -t staging

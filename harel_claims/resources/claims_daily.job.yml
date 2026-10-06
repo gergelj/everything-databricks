@@ -1,0 +1,41 @@
+resources:
+  jobs:
+    claims_daily:
+      name: harel_claims_daily
+      description: Refresh the claims pipeline, then run data quality gates
+
+      schedule:
+        quartz_cron_expression: "0 0 6 * * ?"
+        timezone_id: Asia/Jerusalem
+        # dev mode pauses this automatically; staging/prod run it.
+
+      email_notifications:
+        on_failure:
+          - ${var.alert_email}
+
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${resources.schemas.claims.name}
+
+      tasks:
+        - task_key: refresh_pipeline
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.claims_etl.id}
+
+        - task_key: quality_gates
+          depends_on:
+            - task_key: refresh_pipeline
+          environment_key: default
+          python_wheel_task:
+            package_name: harel_claims
+            entry_point: quality_gates
+            parameters: ["--catalog", "{{job.parameters.catalog}}", "--schema", "{{job.parameters.schema}}"]
+
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "4"
+            dependencies:
+              - ../dist/*.whl

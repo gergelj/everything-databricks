@@ -1,0 +1,49 @@
+# Merge to main -> deploy staging -> integration run -> (manual approval) -> deploy prod.
+# The `prod` GitHub environment has required reviewers, which is the approval gate.
+name: CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: cd-main
+  cancel-in-progress: false   # never interrupt a deployment half-way
+
+jobs:
+  staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: databricks/setup-cli@main
+      - run: databricks bundle deploy -t staging --auto-approve
+      - name: Integration run (sample data -> pipeline -> quality gates)
+        run: |
+          databricks bundle run sample_data -t staging
+          databricks bundle run claims_daily -t staging
+
+  prod:
+    needs: staging
+    runs-on: ubuntu-latest
+    environment: prod         # required reviewers configured on this environment
+    env:
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: databricks/setup-cli@main
+      - run: databricks bundle plan -t prod
+      - run: databricks bundle deploy -t prod --auto-approve
